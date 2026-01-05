@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { Route, Play, MapPin, Clock, Zap } from 'lucide-react';
+import { Map, Play, MapPin, Clock, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const PathFinderContainer = styled(motion.div)`
@@ -261,7 +261,7 @@ function PathFinder() {
         >
             <ControlPanel>
                 <SectionTitle>
-                    <Route size={24} />
+                    <Map size={24} />
                     Path Finder
                 </SectionTitle>
 
@@ -428,7 +428,7 @@ function PathFinder() {
                         opacity: 0.6,
                         fontSize: '1.1rem'
                     }}>
-                        <Route size={48} style={{ marginBottom: '1rem' }} />
+                        <Map size={48} style={{ marginBottom: '1rem' }} />
                         <p>Select start and end stations to find the optimal path</p>
                     </div>
                 )}
