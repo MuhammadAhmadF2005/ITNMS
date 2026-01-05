@@ -1,16 +1,15 @@
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import {
-    Home,
-    Network,
-    Users,
-    Car,
-    BarChart3,
-    Route,
-    Wifi,
-    WifiOff
+  Home,
+  Network,
+  Users,
+  Car,
+  BarChart3,
+  Route,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 
 const NavContainer = styled.nav`
@@ -87,57 +86,57 @@ const StatusDot = styled.div`
 `;
 
 const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: Home },
-    { path: '/network', label: 'Network', icon: Network },
-    { path: '/pathfinder', label: 'Path Finder', icon: Route },
-    { path: '/passengers', label: 'Passengers', icon: Users },
-    { path: '/vehicles', label: 'Vehicles', icon: Car },
-    { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { path: '/dashboard', label: 'Dashboard', icon: Home },
+  { path: '/network', label: 'Network', icon: Network },
+  { path: '/pathfinder', label: 'Path Finder', icon: Route },
+  { path: '/passengers', label: 'Passengers', icon: Users },
+  { path: '/vehicles', label: 'Vehicles', icon: Car },
+  { path: '/analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
 function Navbar({ systemStatus }) {
-    const location = useLocation();
+  const location = useLocation();
 
-    return (
-        <NavContainer>
-            <NavContent>
-                <Logo
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    🚇 Transport Network
-                </Logo>
+  return (
+    <NavContainer>
+      <NavContent>
+        <Logo
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          🚇 Transport Network
+        </Logo>
 
-                <NavLinks>
-                    {navItems.map((item, index) => {
-                        const Icon = item.icon;
-                        const isActive = location.pathname === item.path;
+        <NavLinks>
+          {navItems.map((item, index) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
 
-                        return (
-                            <motion.div
-                                key={item.path}
-                                initial={{ opacity: 0, y: -20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
-                            >
-                                <NavLink to={item.path} active={isActive}>
-                                    <Icon size={18} />
-                                    {item.label}
-                                </NavLink>
-                            </motion.div>
-                        );
-                    })}
-                </NavLinks>
+            return (
+              <motion.div
+                key={item.path}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <NavLink to={item.path} active={isActive}>
+                  <Icon size={18} />
+                  {item.label}
+                </NavLink>
+              </motion.div>
+            );
+          })}
+        </NavLinks>
 
-                <StatusIndicator>
-                    {systemStatus.connected ? <Wifi size={16} /> : <WifiOff size={16} />}
-                    <StatusDot connected={systemStatus.connected} />
-                    {systemStatus.connected ? 'Connected' : 'Disconnected'}
-                </StatusIndicator>
-            </NavContent>
-        </NavContainer>
-    );
+        <StatusIndicator>
+          {systemStatus.connected ? <Wifi size={16} /> : <WifiOff size={16} />}
+          <StatusDot connected={systemStatus.connected} />
+          {systemStatus.connected ? 'Connected' : 'Disconnected'}
+        </StatusIndicator>
+      </NavContent>
+    </NavContainer>
+  );
 }
 
 export default Navbar;

@@ -3,14 +3,18 @@
 #include <sstream>
 #include <thread>
 #include <chrono>
+#include <functional>
+#include <vector>
 #include "httplib.h"
 #include "json.hpp"
-#include "../DSA_project/src/CityGraph.h"
-#include "../DSA_project/src/VehicleMap.h"
-#include "../DSA_project/src/CoreDS.h"
-#include "../DSA_project/src/Analytics.h"
-#include "../DSA_project/src/Tree.h"
-#include "../DSA_project/src/Heap.h"
+
+// Include your DSA project headers
+#include "../../DSA_project/src/CityGraph.h"
+#include "../../DSA_project/src/VehicleMap.h"
+#include "../../DSA_project/src/CoreDS.h"
+#include "../../DSA_project/src/Analytics.h"
+#include "../../DSA_project/src/Tree.h"
+#include "../../DSA_project/src/Heap.h"
 
 using json = nlohmann::json;
 using namespace std;

@@ -1,0 +1,6 @@
+@echo off
+echo 🚇 Testing Frontend Compilation...
+echo ==================================
+cd frontend
+echo Starting React development server...
+npm start
