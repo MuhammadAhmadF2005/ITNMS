@@ -7,7 +7,7 @@ import {
   Users,
   Car,
   BarChart3,
-  Route,
+  Map,
   Wifi,
   WifiOff
 } from 'lucide-react';
@@ -88,7 +88,7 @@ const StatusDot = styled.div`
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: Home },
   { path: '/network', label: 'Network', icon: Network },
-  { path: '/pathfinder', label: 'Path Finder', icon: Route },
+  { path: '/pathfinder', label: 'Path Finder', icon: Map },
   { path: '/passengers', label: 'Passengers', icon: Users },
   { path: '/vehicles', label: 'Vehicles', icon: Car },
   { path: '/analytics', label: 'Analytics', icon: BarChart3 },
