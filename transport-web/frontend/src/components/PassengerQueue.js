@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Plus, Play, Clock, User } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { transportService } from '../lib/transport-service';
 
 const QueueContainer = styled.div`
   display: grid;
@@ -216,16 +217,13 @@ function PassengerQueue() {
         }
 
         try {
-            const response = await fetch('/api/passengers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: parseInt(passengerForm.id),
-                    name: passengerForm.name
-                })
-            });
+            // Replaced fetch with transportService
+            const response = await transportService.addPassenger(
+                parseInt(passengerForm.id),
+                passengerForm.name
+            );
 
-            if (response.ok) {
+            if (response.success) {
                 const newPassenger = {
                     id: parseInt(passengerForm.id),
                     name: passengerForm.name,
@@ -239,16 +237,7 @@ function PassengerQueue() {
                 toast.error('Failed to add passenger');
             }
         } catch (error) {
-            // Fallback for demo
-            const newPassenger = {
-                id: parseInt(passengerForm.id),
-                name: passengerForm.name,
-                joinTime: new Date()
-            };
-
-            setQueue(prev => [...prev, newPassenger]);
-            setPassengerForm({ id: '', name: '' });
-            toast.success(`${passengerForm.name} added to queue`);
+            toast.error('Connection error');
         }
     };
 
@@ -259,25 +248,24 @@ function PassengerQueue() {
         }
 
         try {
-            const response = await fetch('/api/passengers', {
-                method: 'DELETE'
-            });
+            // Replaced fetch with transportService
+            const response = await transportService.processPassenger();
 
-            const processedPassenger = queue[0];
-            setQueue(prev => prev.slice(1));
-            setTotalProcessed(prev => prev + 1);
+            if (response.success) {
+                const processedPassenger = queue[0];
+                setQueue(prev => prev.slice(1));
+                setTotalProcessed(prev => prev + 1);
 
-            // Update average wait time
-            const waitTime = (Date.now() - processedPassenger.joinTime.getTime()) / 60000;
-            setAverageWaitTime(prev => ((prev * totalProcessed) + waitTime) / (totalProcessed + 1));
+                // Update average wait time
+                const waitTime = (Date.now() - processedPassenger.joinTime.getTime()) / 60000;
+                setAverageWaitTime(prev => ((prev * totalProcessed) + waitTime) / (totalProcessed + 1));
 
-            toast.success(`${processedPassenger.name} processed successfully`);
+                toast.success(`${processedPassenger.name} processed successfully`);
+            } else {
+                toast.error('Failed to process passenger');
+            }
         } catch (error) {
-            // Fallback for demo
-            const processedPassenger = queue[0];
-            setQueue(prev => prev.slice(1));
-            setTotalProcessed(prev => prev + 1);
-            toast.success(`${processedPassenger.name} processed successfully`);
+            toast.error('Connection error');
         }
     };
 

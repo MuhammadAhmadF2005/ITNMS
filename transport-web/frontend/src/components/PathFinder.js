@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { Map, Play, MapPin, Clock, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { transportService } from '../lib/transport-service';
 
 const PathFinderContainer = styled(motion.div)`
   display: grid;
@@ -218,24 +219,23 @@ function PathFinder() {
         setIsLoading(true);
 
         try {
-            const response = await fetch(`/api/shortest-path?start=${startStation}&end=${endStation}&algorithm=${algorithm}`);
+            // Replaced fetch with transportService
+            const response = await transportService.findShortestPath(
+                parseInt(startStation),
+                parseInt(endStation)
+            );
 
-            if (response.ok) {
-                const data = await response.json();
-
-                // Simulate path result for demo
-                const mockResult = {
-                    path: [
-                        { id: parseInt(startStation), name: stations.find(s => s.id === parseInt(startStation))?.name },
-                        { id: 1, name: 'Central Station' },
-                        { id: parseInt(endStation), name: stations.find(s => s.id === parseInt(endStation))?.name }
-                    ],
-                    totalDistance: Math.floor(Math.random() * 20) + 5,
-                    estimatedTime: Math.floor(Math.random() * 30) + 10,
+            if (response.success) {
+                // transportService returns { success, path, distance }
+                // We need to shape it for the UI state
+                const result = {
+                    path: response.path,
+                    totalDistance: response.distance,
+                    estimatedTime: Math.floor(response.distance * 1.5) + 10,
                     algorithm: algorithm.toUpperCase()
                 };
 
-                setPathResult(mockResult);
+                setPathResult(result);
                 toast.success('Path found successfully!');
             } else {
                 toast.error('Failed to find path');

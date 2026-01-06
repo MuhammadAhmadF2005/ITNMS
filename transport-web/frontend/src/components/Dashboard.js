@@ -11,6 +11,7 @@ import {
     Play
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { transportService } from '../lib/transport-service';
 
 const DashboardContainer = styled.div`
   display: grid;
@@ -152,16 +153,10 @@ function Dashboard({ systemStatus }) {
         }
 
         try {
-            const response = await fetch('/api/stations', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: parseInt(stationForm.id),
-                    name: stationForm.name
-                })
-            });
+            // Replaced fetch with transportService
+            const response = await transportService.addStation(parseInt(stationForm.id), stationForm.name);
 
-            if (response.ok) {
+            if (response.success) {
                 toast.success('Station added successfully!');
                 setStationForm({ id: '', name: '' });
                 addActivity('Station added', stationForm.name);
@@ -180,17 +175,14 @@ function Dashboard({ systemStatus }) {
         }
 
         try {
-            const response = await fetch('/api/routes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    source: parseInt(routeForm.source),
-                    destination: parseInt(routeForm.destination),
-                    weight: parseInt(routeForm.weight)
-                })
-            });
+            // Replaced fetch with transportService
+            const response = await transportService.addRoute(
+                parseInt(routeForm.source),
+                parseInt(routeForm.destination),
+                parseInt(routeForm.weight)
+            );
 
-            if (response.ok) {
+            if (response.success) {
                 toast.success('Route added successfully!');
                 setRouteForm({ source: '', destination: '', weight: '' });
                 addActivity('Route created', `${routeForm.source} → ${routeForm.destination}`);

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Car, Plus, Search, Trash2, Edit, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { transportService } from '../lib/transport-service';
 
 const VehicleContainer = styled.div`
   display: grid;
@@ -276,54 +277,45 @@ function VehicleManager() {
         }
 
         try {
-            const response = await fetch('/api/vehicles', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            // Replaced fetch with transportService
+            const response = await transportService.addVehicle(
+                parseInt(vehicleForm.id),
+                vehicleForm.type
+            );
+
+            if (response.success) {
+                const newVehicle = {
                     id: parseInt(vehicleForm.id),
-                    type: vehicleForm.type
-                })
-            });
+                    type: vehicleForm.type,
+                    status: 'active',
+                    route: 'Unassigned',
+                    passengers: 0
+                };
 
-            const newVehicle = {
-                id: parseInt(vehicleForm.id),
-                type: vehicleForm.type,
-                status: 'active',
-                route: 'Unassigned',
-                passengers: 0
-            };
-
-            setVehicles(prev => [...prev, newVehicle]);
-            setVehicleForm({ id: '', type: 'bus' });
-            toast.success(`Vehicle ${vehicleForm.id} added successfully`);
+                setVehicles(prev => [...prev, newVehicle]);
+                setVehicleForm({ id: '', type: 'bus' });
+                toast.success(`Vehicle ${vehicleForm.id} added successfully`);
+            } else {
+                toast.error('Failed to add vehicle');
+            }
         } catch (error) {
-            // Fallback for demo
-            const newVehicle = {
-                id: parseInt(vehicleForm.id),
-                type: vehicleForm.type,
-                status: 'active',
-                route: 'Unassigned',
-                passengers: 0
-            };
-
-            setVehicles(prev => [...prev, newVehicle]);
-            setVehicleForm({ id: '', type: 'bus' });
-            toast.success(`Vehicle ${vehicleForm.id} added successfully`);
+            toast.error('Connection error');
         }
     };
 
     const handleRemoveVehicle = async (vehicleId) => {
         try {
-            const response = await fetch(`/api/vehicles/${vehicleId}`, {
-                method: 'DELETE'
-            });
+            // Replaced fetch with transportService
+            const response = await transportService.removeVehicle(vehicleId);
 
-            setVehicles(prev => prev.filter(v => v.id !== vehicleId));
-            toast.success(`Vehicle ${vehicleId} removed successfully`);
+            if (response.success) {
+                setVehicles(prev => prev.filter(v => v.id !== vehicleId));
+                toast.success(`Vehicle ${vehicleId} removed successfully`);
+            } else {
+                toast.error('Failed to remove vehicle');
+            }
         } catch (error) {
-            // Fallback for demo
-            setVehicles(prev => prev.filter(v => v.id !== vehicleId));
-            toast.success(`Vehicle ${vehicleId} removed successfully`);
+            toast.error('Connection error');
         }
     };
 
@@ -333,21 +325,18 @@ function VehicleManager() {
             return;
         }
 
-        try {
-            const response = await fetch(`/api/vehicles/${searchTerm}`);
-            if (response.ok) {
-                const data = await response.json();
-                toast.success('Vehicle found!');
-                // Highlight the vehicle in the list
-                const element = document.getElementById(`vehicle-${searchTerm}`);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth' });
-                }
-            } else {
-                toast.error('Vehicle not found');
+        // Client-side search simulation since we have the full list
+        const vehicleExists = vehicles.some(v => v.id.toString() === searchTerm || v.type.includes(searchTerm));
+
+        if (vehicleExists) {
+            toast.success('Vehicle found!');
+            // Highlight the vehicle in the list
+            const element = document.getElementById(`vehicle-${searchTerm}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
             }
-        } catch (error) {
-            toast.error('Search failed');
+        } else {
+            toast.error('Vehicle not found');
         }
     };
 

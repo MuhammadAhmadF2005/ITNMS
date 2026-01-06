@@ -22,6 +22,7 @@ import PathFinder from './components/PathFinder';
 import { LocationMap } from "./components/ui/expand-map";
 import { PixelTrailDemo } from "./components/PixelTrailDemo";
 import { BGPattern } from "./components/ui/bg-pattern";
+import { transportService } from "./lib/transport-service";
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -63,12 +64,12 @@ function App() {
 
     const checkSystemStatus = async () => {
         try {
-            const response = await fetch('/api/status');
-            if (response.ok) {
-                const data = await response.json();
+            // Replaced fetch with client-side service for Vercel demo
+            const response = await transportService.getSystemStatus();
+            if (response.success) {
                 setSystemStatus({
                     connected: true,
-                    ...data.status
+                    ...response.status
                 });
             }
         } catch (error) {

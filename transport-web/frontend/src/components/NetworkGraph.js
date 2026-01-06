@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import * as d3 from 'd3';
 import { Play, Pause, RotateCcw, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { transportService } from '../lib/transport-service';
 
 const GraphContainer = styled(motion.div)`
   background: rgba(255, 255, 255, 0.1);
@@ -338,12 +339,12 @@ function NetworkGraph() {
         }
 
         try {
-            const response = await fetch(`/api/bfs/${selectedNode.id}`);
-            if (response.ok) {
-                const data = await response.json();
+            // Replaced fetch with transportService
+            const response = await transportService.performBFS(selectedNode.id);
+            if (response.success) {
                 toast.success('BFS traversal completed');
                 // Animate the traversal
-                animateTraversal(data.traversal);
+                animateTraversal(response.traversal);
             }
         } catch (error) {
             toast.error('Failed to perform BFS');
