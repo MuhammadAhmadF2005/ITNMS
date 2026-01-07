@@ -11,6 +11,8 @@ A modern, high-performance dashboard for managing complex transportation network
 
 ## ✨ Key Features
 
+*   **Secure Authentication**: Role-based access control with Supabase Auth.
+*   **Real-time Database**: Persistent storage for stations, vehicles, and passengers using Postgres.
 *   **Interactive Network Graph**: Visualize stations and routes with D3.js force-directed graphs.
 *   **Real-time Dashboard**: Monitor system status, passenger queues, and vehicle locations.
 *   **Path Finding**: Calculate optimal routes using Dijkstra's Algorithm and BFS.
@@ -20,13 +22,19 @@ A modern, high-performance dashboard for managing complex transportation network
 ## 🛠️ Technology Stack
 
 *   **Frontend**: React (Create React App), TypeScript, Tailwind CSS
+*   **Backend/Database**: Supabase (PostgreSQL, Auth)
 *   **Visualization**: D3.js
-*   **State & Simulation**: Custom client-side TypeScript service (Graph algorithms, Queues)
+*   **State & Simulation**: Custom client-side TypeScript service connected to Supabase
 *   **Backend (Legacy)**: C++ (Optional, for local high-performance simulation)
 
 ## 📦 Getting Started
 
-### 1. Installation
+### 1. Prerequisites
+
+*   Node.js & npm
+*   A [Supabase](https://supabase.com/) project
+
+### 2. Installation
 
 ```bash
 git clone https://github.com/MuhammadAhmadF2005/ITNMS.git
@@ -34,7 +42,22 @@ cd ITNMS/transport-web/frontend
 npm install
 ```
 
-### 2. Run Locally
+### 3. Database Setup
+
+1.  Navigate to your **Supabase Dashboard** -> **SQL Editor**.
+2.  Run the contents of `../supabase_schema.sql` to create the tables.
+3.  (Optional) Run `../seed_data.sql` to populate with sample data.
+
+### 4. Environment Variables
+
+Create a `.env` file in `transport-web/frontend` (copy `.env.example` if available) and add your keys:
+
+```env
+REACT_APP_SUPABASE_URL=your_supabase_url
+REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 5. Run Locally
 
 ```bash
 npm start
@@ -48,14 +71,17 @@ This project is optimized for Vercel.
 1.  Push your code to GitHub.
 2.  Import the repository into Vercel.
 3.  Set the **Root Directory** to `transport-web/frontend`.
-4.  The Build Command (`npm run build`) and Output Directory (`build`) should be auto-detected.
+4.  Add your **Environment Variables** (Supabase URL & Key) in the Vercel Project Settings.
 5.  Deploy!
 
 ## 📂 Project Structure
 
 *   `frontend/`: The main React application.
-    *   `src/lib/transport-service.ts`: The core logic engine (simulates the backend).
+    *   `src/lib/transport-service.ts`: Service layer interacting with Supabase.
     *   `src/components/`: UI components and data visualizations.
+    *   `src/context/`: Auth context.
+*   `supabase_schema.sql`: Database migration script.
+*   `seed_data.sql`: Sample data script.
 *   `backend/`: (Optional) C++ implementation of the core algorithms. Kept for reference.
 
 ## 📄 License
