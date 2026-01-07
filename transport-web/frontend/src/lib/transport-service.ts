@@ -1,5 +1,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from './supabaseClient';
 
 // Types mimicking the C++ structures
 export interface Station {
@@ -31,128 +32,183 @@ export interface SystemStatus {
 }
 
 class TransportService {
-    private stations: Map<number, string> = new Map();
-    private routes: Route[] = [];
-    private vehicles: Vehicle[] = [];
-    private passengerQueue: Passenger[] = [];
-
-    // Analytics logic
-    private stationVisits: Map<number, number> = new Map();
+    // Keep local cache for fast simulation/graph algo if needed, 
+    // but primary source is DB.
+    // For pathfinding, we might need to fetch all routes.
 
     constructor() {
-        this.initializeDemoData();
-    }
-
-    private initializeDemoData() {
-        // Initialize with same demo data as C++ backend
-        this.stations.set(1, "Central Station");
-        this.stations.set(2, "North Terminal");
-        this.stations.set(3, "South Hub");
-        this.stations.set(4, "East Junction");
-        this.stations.set(5, "West Plaza");
-
-        this.routes.push({ source: 1, destination: 2, weight: 5 });
-        this.routes.push({ source: 1, destination: 3, weight: 7 });
-        this.routes.push({ source: 1, destination: 4, weight: 3 });
-        this.routes.push({ source: 1, destination: 5, weight: 4 });
-
-        this.vehicles.push({ id: 101, type: "bus" });
-        this.vehicles.push({ id: 102, type: "metro" });
-        this.vehicles.push({ id: 103, type: "tram" });
+        // We can't await in constructor, but we can fire off a sync check or similar.
     }
 
     // --- Station Operations ---
     async addStation(id: number, name: string): Promise<{ success: boolean; message: string }> {
-        this.stations.set(id, name);
+        const { error } = await supabase
+            .from('stations')
+            .insert({ id, name });
+
+        if (error) {
+            console.error('Error adding station:', error);
+            return { success: false, message: error.message };
+        }
         return { success: true, message: "Station added successfully" };
     }
 
     async getStations(): Promise<{ success: boolean; stations: Station[] }> {
-        const stationList: Station[] = Array.from(this.stations.entries()).map(([id, name]) => ({ id, name }));
-        return { success: true, stations: stationList };
+        const { data, error } = await supabase
+            .from('stations')
+            .select('*')
+            .order('id', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching stations:', error);
+            // Fallback to empty or maybe demo data if we detect table missing?
+            // For now, return empty to be strict about DB integration.
+            return { success: false, stations: [] };
+        }
+        return { success: true, stations: data as Station[] };
     }
 
     async deleteStation(id: number): Promise<{ success: boolean; message: string }> {
-        this.stations.delete(id);
+        const { error } = await supabase.from('stations').delete().eq('id', id);
+        if (error) {
+            return { success: false, message: error.message };
+        }
         return { success: true, message: "Station deleted successfully" };
     }
 
     // --- Route Operations ---
     async addRoute(source: number, destination: number, weight: number): Promise<{ success: boolean; message: string }> {
-        this.routes.push({ source, destination, weight });
+        const { error } = await supabase
+            .from('routes')
+            .insert({ source, destination, weight });
+
+        if (error) {
+            return { success: false, message: error.message };
+        }
         return { success: true, message: "Route added successfully" };
     }
 
     async getRoutes(): Promise<{ success: boolean; routes: Route[] }> {
-        return { success: true, routes: [...this.routes] };
+        const { data, error } = await supabase.from('routes').select('*');
+        if (error) {
+            return { success: false, routes: [] };
+        }
+        return { success: true, routes: data as Route[] };
     }
 
     // --- Path Finding (Simulation) ---
+    // Note: Complex algorithms like Dijkstra are usually better client-side if data set is small
+    // which it is, or via an Edge Function. We will keep client-side for now.
     async findShortestPath(start: number, end: number): Promise<{ success: boolean; path: Station[]; distance: number }> {
-        const startName = this.stations.get(start) || "Unknown";
-        const endName = this.stations.get(end) || "Unknown";
+        // Fetch all stations and routes to build graph
+        const [stationsRes, routesRes] = await Promise.all([
+            this.getStations(),
+            this.getRoutes()
+        ]);
 
-        // Simulated path
+        if (!stationsRes.success || !routesRes.success) {
+            return { success: false, path: [], distance: 0 };
+        }
+
+        const stationMap = new Map(stationsRes.stations.map(s => [s.id, s.name]));
+
+        // Simple mock path logic reusing indices, proper impl would be Dijkstra implementation here
+        // But for brevity of this integration task, we simulate a path if valid
+        if (!stationMap.has(start) || !stationMap.has(end)) {
+            return { success: false, path: [], distance: 0 };
+        }
+
         const path: Station[] = [
-            { id: start, name: startName },
-            { id: 1, name: "Central Station" },
-            { id: end, name: endName }
+            { id: start, name: stationMap.get(start)! },
+            { id: end, name: stationMap.get(end)! }
         ];
 
         return {
             success: true,
             path,
-            distance: 5 + Math.floor(Math.random() * 15)
+            distance: Math.floor(Math.random() * 20) + 5
         };
     }
 
     async performBFS(startId: number): Promise<{ success: boolean; traversal: number[] }> {
-        // Simulated BFS result
-        return { success: true, traversal: [1, 2, 3, 4, 5] };
+        // Just return IDs for simulation
+        const { data } = await supabase.from('stations').select('id');
+        const ids = data ? data.map(s => s.id) : [];
+        return { success: true, traversal: ids };
     }
 
     // --- Vehicle Operations ---
     async addVehicle(id: number, type: string): Promise<{ success: boolean; message: string }> {
-        this.vehicles.push({ id, type });
+        const { error } = await supabase.from('vehicles').insert({ id, type });
+        if (error) return { success: false, message: error.message };
         return { success: true, message: "Vehicle added successfully" };
     }
 
     async getVehicles(): Promise<{ success: boolean; vehicles: Vehicle[] }> {
-        return { success: true, vehicles: [...this.vehicles] };
+        const { data, error } = await supabase.from('vehicles').select('*');
+        if (error) return { success: false, vehicles: [] };
+        return { success: true, vehicles: data as Vehicle[] };
     }
 
     async removeVehicle(id: number): Promise<{ success: boolean; message: string }> {
-        this.vehicles = this.vehicles.filter(v => v.id !== id);
+        const { error } = await supabase.from('vehicles').delete().eq('id', id);
+        if (error) return { success: false, message: error.message };
         return { success: true, message: "Vehicle removed successfully" };
     }
 
     // --- Passenger Operations ---
     async addPassenger(id: number, name: string): Promise<{ success: boolean; message: string }> {
-        this.passengerQueue.push({ id, name });
+        const { error } = await supabase.from('passengers').insert({ id, name, status: 'waiting' });
+        if (error) return { success: false, message: error.message };
         return { success: true, message: "Passenger added to queue" };
     }
 
     async processPassenger(): Promise<{ success: boolean; message: string }> {
-        if (this.passengerQueue.length > 0) {
-            this.passengerQueue.shift();
-            return { success: true, message: "Passenger processed" };
+        // Fetch oldest waiting passenger
+        const { data, error } = await supabase
+            .from('passengers')
+            .select('*')
+            .eq('status', 'waiting')
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .single();
+
+        if (error || !data) {
+            return { success: false, message: "No passengers to process" };
         }
-        return { success: false, message: "Queue is empty" };
+
+        const { error: updateError } = await supabase
+            .from('passengers')
+            .update({ status: 'processed' })
+            .eq('id', data.id);
+
+        if (updateError) return { success: false, message: updateError.message };
+        return { success: true, message: `Passenger ${data.name} processed` };
     }
 
     async getPassengerQueue(): Promise<{ success: boolean; queue: Passenger[] }> {
-        return { success: true, queue: [...this.passengerQueue] };
+        const { data, error } = await supabase
+            .from('passengers')
+            .select('*')
+            .eq('status', 'waiting');
+        if (error) return { success: false, queue: [] };
+        return { success: true, queue: data as Passenger[] };
     }
 
     // --- System Status ---
     async getSystemStatus(): Promise<{ success: boolean; status: Omit<SystemStatus, 'connected'> & { uptime: string } }> {
+        // Get counts
+        const { count: stationCount } = await supabase.from('stations').select('*', { count: 'exact', head: true });
+        const { count: vehicleCount } = await supabase.from('vehicles').select('*', { count: 'exact', head: true });
+        const { count: queueLength } = await supabase.from('passengers').select('*', { count: 'exact', head: true }).eq('status', 'waiting');
+
         return {
             success: true,
             status: {
-                uptime: "Running (Simulation)",
-                stationCount: this.stations.size,
-                queueLength: this.passengerQueue.length,
-                vehicleCount: this.vehicles.length
+                uptime: "Online (Supabase)",
+                stationCount: stationCount || 0,
+                queueLength: queueLength || 0,
+                vehicleCount: vehicleCount || 0
             }
         };
     }

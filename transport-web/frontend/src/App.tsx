@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useOutletContext } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 // @ts-ignore
 import styled from 'styled-components';
@@ -23,6 +23,10 @@ import { LocationMap } from "./components/ui/expand-map";
 import { PixelTrailDemo } from "./components/PixelTrailDemo";
 import { BGPattern } from "./components/ui/bg-pattern";
 import { transportService } from "./lib/transport-service";
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './components/Login';
+import SignUp from './components/SignUp';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -45,7 +49,7 @@ interface SystemStatus {
     vehicleCount: number;
 }
 
-function App() {
+function PrivateLayout() {
     const [systemStatus, setSystemStatus] = useState<SystemStatus>({
         connected: false,
         stationCount: 0,
@@ -78,29 +82,53 @@ function App() {
     };
 
     return (
+        <AppContainer>
+            <BGPattern variant="grid" fill="#1e293b" size={40} className="opacity-50" />
+            <Navbar systemStatus={systemStatus} />
+            <MainContent
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+            >
+                <div className="mb-8 flex justify-center">
+                    <LocationMap location="San Francisco, CA" coordinates="37.7749° N, 122.4194° W" />
+                </div>
+                <Outlet context={{ systemStatus }} />
+            </MainContent>
+        </AppContainer>
+    );
+}
+
+function App() {
+    return (
         <Router>
-            <AppContainer>
-                <BGPattern variant="grid" fill="#1e293b" size={40} className="opacity-50" />
-                <Navbar systemStatus={systemStatus} />
-                <MainContent
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <div className="mb-8 flex justify-center">
-                        <LocationMap location="San Francisco, CA" coordinates="37.7749° N, 122.4194° W" />
-                    </div>
-                    <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                        <Route path="/dashboard" element={<Dashboard systemStatus={systemStatus} />} />
-                        <Route path="/network" element={<NetworkGraph />} />
-                        <Route path="/passengers" element={<PassengerQueue />} />
-                        <Route path="/vehicles" element={<VehicleManager />} />
-                        <Route path="/analytics" element={<Analytics />} />
-                        <Route path="/pathfinder" element={<PathFinder />} />
-                        <Route path="/demo" element={<div className="h-[80vh] w-full border border-gray-200 rounded-lg overflow-hidden relative"><PixelTrailDemo /></div>} />
-                    </Routes>
-                </MainContent>
+            <AuthProvider>
+                <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<SignUp />} />
+
+                    <Route element={<ProtectedRoute />}>
+                        <Route element={<PrivateLayout />}>
+                            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                            {/* Note: If dashboard needs systemStatus, we can pass it via Outlet context or just let it fetch/mock if needed, 
+                                but here we already have it in PrivateLayout. 
+                                Since the original code passed it as prop `systemStatus={systemStatus}`, 
+                                we might need to adjust Dashboard to read from context or cloning. 
+                                However, easier here is effectively handled by Outlet. 
+                                But React Router Outlet Context is the way. 
+                                Or simply, just render the component with props if we weren't using Outlet.
+                                For now, I'll assume components manage or I pass it to Outlet context.
+                            */}
+                            <Route path="/dashboard" element={<DashboardConsumer />} />
+                            <Route path="/network" element={<NetworkGraph />} />
+                            <Route path="/passengers" element={<PassengerQueue />} />
+                            <Route path="/vehicles" element={<VehicleManager />} />
+                            <Route path="/analytics" element={<Analytics />} />
+                            <Route path="/pathfinder" element={<PathFinder />} />
+                            <Route path="/demo" element={<div className="h-[80vh] w-full border border-gray-200 rounded-lg overflow-hidden relative"><PixelTrailDemo /></div>} />
+                        </Route>
+                    </Route>
+                </Routes>
                 <Toaster
                     position="top-right"
                     toastOptions={{
@@ -111,9 +139,15 @@ function App() {
                         },
                     }}
                 />
-            </AppContainer>
+            </AuthProvider>
         </Router>
     );
+}
+
+
+function DashboardConsumer() {
+    const { systemStatus } = useOutletContext<{ systemStatus: SystemStatus }>();
+    return <Dashboard systemStatus={systemStatus} />;
 }
 
 export default App;
